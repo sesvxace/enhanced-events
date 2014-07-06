@@ -1,5 +1,5 @@
 #--
-# Enhanced Events v2.0 by Enelvon
+# Enhanced Events v2.1 by Enelvon
 # =============================================================================
 # 
 # Summary
@@ -27,7 +27,7 @@
 # Usage
 # -----------------------------------------------------------------------------
 #   This script is controlled through tags placed in comments boxes on event
-# pages as well as through the Conditions hash in the `SES::EnhancedEvents`
+# pages as well as through the Conditions hash in the `SES::Events`
 # module. Instructions for the hash are detailed in the module itself, while
 # information about the tags is provided here.
 # 
@@ -81,12 +81,14 @@
 # `!Y!` should be the Y offset for a given space. Negative values indicate
 # spaces above the event. Positive values indicate spaces below the event.
 # 
-# `<Condition: !Cond!(, !Cond!, !Cond!,...)>`
+# `<Condition: !Cond!(!Params!)[, !Cond!(!Params!), !Cond!(!Params!),...]>`
 # 
 # Place this in a Comments box to give an event page extra conditions. You can
 # include as many of these as you would like on a page, though as each tag can
 # contain multiple conditions it seems unlikely that you will need more than
-# one.
+# one. You can pass parameters to conditions by placing parentheses around them.
+# Do not put spaces between passed parameters - only commas. See the Conditions
+# hash in the SES::Events module for a long list of example conditions.
 # 
 # **Replacements:**
 # 
@@ -165,46 +167,264 @@
 # the SES Core.
 # 
 #++
-module SES module EnhancedEvents
-    EventConditions = {
+module SES module Events
+  Conditions = {
     # Key => proc { script to evaluate },
-    
-    # As long as $game_variables[1] isn't 5, the event page can run
-    'Var1' => proc { $game_variables[1] != 5 },
-    # The event page can run only if $game_variables[1] equals 6
-    'Var2' => proc { $game_variables[1] == 6 },
-    # The event page can only run if the party doesn't include actor 3
-    'Act3' => proc { !$game_party.members.include?($game_actors[3]) },
-    # The event page can only run if $game_switches[1] is off
-    'Swi1' => proc { !$game_switches[1] },
-    # The event page can only run if the lead party member is equipped with a
-    # Hand Axe
-    'Equ1' => proc do
-      $game_party.members[0].weapons.include?($data_weapons[1])
+    # =========================================================================
+    # Variable Related
+    #  These conditions can be used to set page conditions based on the value of
+    # entries in the $game_variables array. Almost all of them take the same
+    # three parameters, described below.
+    #
+    # Parameters:
+    #  var - the ID of a variable in $game_variables
+    #  val - the value against which the $game_variables entry is being checked
+    #  gvar - omit this if you wish val to be a solid value, but if you want val
+    #         to be another variable ID you can put true in this slot
+    #
+    # Examples:
+    #  <Conditions: var_!=(1,5)>
+    #   This will ensure that the page will only be displayed if the variable
+    #  with ID 1 is not equal to 5.
+    #
+    #  <Conditions: var_==(1,2,true)>
+    #   This will ensure that the page will only be displayed if the variable
+    #  with ID 1 is equal to the variable with ID 2.
+    # =========================================================================
+    # If $game_variables[var] does not equal val
+    'var_!=' => proc do |var, val, gvar|
+      val = (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
+      $game_variables[var.to_i] != val
     end,
-    }
+    # If $game_variables[var] equals val
+    'var_==' => proc do |var, val, gvar|
+      val = (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
+      $game_variables[var.to_i] == val
+    end,
+    # If $game_variables[var] is less than val
+    'var_<' => proc do |var, val, gvar|
+      val = (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
+      $game_variables[var.to_i] < val
+    end,
+    # If $game_variables[var] is less than or equal to val
+    'var_<=' => proc do |var, val, gvar|
+      val = (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
+      $game_variables[var.to_i] <= val
+    end,
+    # If $game_variables[var] is greater than val
+    'var_>' => proc do |var, val, gvar|
+      val = (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
+      $game_variables[var.to_i] > val
+    end,
+    # If $game_variables[var] is greater than or equal to val
+    'var_>=' => proc do |var, val, gvar|
+      val = (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
+      $game_variables[var.to_i] >= val
+    end,
+    # If $game_variables[var] is present in the range val1..val2
+    # Extra Parameters:
+    #  val1 - the lower end of the range being checked
+    #  val2 - the upper end of the range being checked
+    #  gvar1 - same as gvar for other variable conditions, but affects only val1
+    #  gvar2 - same as gvar for other variable conditions, but affects only val2
+    'var_between' => proc do |var, val1, val2, gvar1, gvar2|
+      lower_bound = (gvar1['true'] ? $game_variables[val1.to_i] : val1.to_i)
+      upper_bound = (gvar2['true'] ? $game_variables[val2.to_i] : val2.to_i)
+      (lower_bound..upper_bound).include?($game_variables[var])
+    end,
+    # If $game_variables[var] is not present in the range val1..val2
+    # Extra Parameters:
+    #  val1 - the lower end of the range being checked
+    #  val2 - the upper end of the range being checked
+    #  gvar1 - same as gvar for other variable conditions, but affects only val1
+    #  gvar2 - same as gvar for other variable conditions, but affects only val2
+    'var_not_between' => proc do |var, val1, val2, gvar1, gvar2|
+      lower_bound = (gvar1['true'] ? $game_variables[val1.to_i] : val1.to_i)
+      upper_bound = (gvar2['true'] ? $game_variables[val2.to_i] : val2.to_i)
+      !(lower_bound..upper_bound).include?($game_variables[var])
+    end,
+    # =========================================================================
+    # Switch Related
+    #  These conditions can be used to set page conditions based on the value of
+    # entries in the $game_switches array. All of them take the same parameters,
+    # described below.
+    #
+    # Parameters:
+    #  switch - the ID of a switch in $game_switches
+    #  value - either true or false, depending on whether the switch should be
+    #          on or off
+    #
+    # Examples:
+    #  <Conditions: switch(1,true)>
+    #   This will ensure that the page will only be displayed if the switch with
+    #  ID 1 is on.
+    #
+    #  <Conditions: switch(1,false)>
+    #   This will ensure that the page will only be displayed if the switch with
+    #  ID 1 is off.
+    # =========================================================================
+    # If $game_switches[switch] is equal to value
+    'switch' => proc do |switch, value|
+      $game_switches[switch.to_i] == (value == 'true' ? true : false)
+    end,
+    # =========================================================================
+    # Actor Related
+    #  These conditions can be used to set page conditions based on values
+    # related to actors. All of them have the same basic parameter, described
+    # below. They also share the same final parameter, also described below.
+    #
+    # Parameters:
+    #  actor - the ID of an actor in $game_actors
+    #  party - omit this if you are specifying an actor by ID, but put true in
+    #          this slot if you wish for actor to point to a slot in the party
+    #          (party indicies begin at 0)
+    #
+    # Examples:
+    #  <Conditions: actor_using_weapon(1,5)>
+    #   This will ensure that the page will only be displayed if the actor with
+    #  ID 1 is using the weapon with ID 5.
+    #
+    #  <Conditions: actor_param_>=(0,atk,100,false,true)>
+    #   This will ensure that the page will only be displayed if the actor in
+    #  the party's first slot has an atk stat that is greater than or equal to
+    #  100.
+    # =========================================================================
+    # If the actor with ID actor is equipped with the weapon with ID wid
+    'actor_using_weapon' => proc do |actor, wid, party|
+      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
+      actor.weapons.include?($data_weapons[wid.to_i])
+    end,
+    # If the actor with ID actor is equipped with the armor with ID aid
+    'actor_using_armor' => proc do |actor, aid, party|
+      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
+      actor.weapons.include?($data_armors[aid.to_i])
+    end,
+    # If the actor with ID actor has a level greater than lvl
+    # Extra Parameters:
+    #  gvar - same as for Variable Related Conditions - set to false if you wish
+    #         to use party but not gvar
+    'actor_level_>' => proc do |actor, lvl, gvar, party|
+      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
+      actor.level > (gvar['true'] ? $game_variables[lvl.to_i] : lvl.to_i)
+    end,
+    # If the actor with ID actor has a level greater than or equal to lvl
+    # Extra Parameters:
+    #  gvar - same as for Variable Related Conditions - set to false if you wish
+    #         to use party but not gvar
+    'actor_level_>=' => proc do |actor, lvl, gvar, party|
+      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
+      actor.level >= (gvar['true'] ? $game_variables[lvl.to_i] : lvl.to_i)
+    end,
+    # If the actor with ID actor has a level less than lvl
+    # Extra Parameters:
+    #  gvar - same as for Variable Related Conditions - set to false if you wish
+    #         to use party but not gvar
+    'actor_level_<' => proc do |actor, lvl, gvar, party|
+      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
+      actor.level < (gvar['true'] ? $game_variables[lvl.to_i] : lvl.to_i)
+    end,
+    # If the actor with ID actor has a level less than or equal to lvl
+    # Extra Parameters:
+    #  gvar - same as for Variable Related Conditions - set to false if you wish
+    #         to use party but not gvar
+    'actor_level_<=' => proc do |actor, lvl, gvar, party|
+      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
+      actor.level <= (gvar['true'] ? $game_variables[lvl.to_i] : lvl.to_i)
+    end,
+    # If the actor with ID actor has param param at a value greater than val
+    # Extra Parameters:
+    #  param - any parameter name - must be lower-case
+    #  gvar - same as for Variable Related Conditions - set to false if you wish
+    #         to use party but not gvar
+    'actor_param_>' => proc do |actor, param, val, gvar, party|
+      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
+      actor.send(param) > (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
+    end,
+    # If the actor with ID actor has param param at a value greater than or
+    #  equal to val
+    # Extra Parameters:
+    #  param - any parameter name - must be lower-case
+    #  gvar - same as for Variable Related Conditions - set to false if you wish
+    #         to use party but not gvar
+    'actor_param_>=' => proc do |actor, param, val, gvar, party|
+      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
+      actor.send(param) >= (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
+    end,
+    # If the actor with ID actor has param param at a value less than val
+    # Extra Parameters:
+    #  param - any parameter name - must be lower-case
+    #  gvar - same as for Variable Related Conditions - set to false if you wish
+    #         to use party but not gvar
+    'actor_param_<' => proc do |actor, param, val, gvar, party|
+      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
+      actor.send(param) < (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
+    end,
+    # If the actor with ID actor has param param at a value less than or equal
+    #  to val
+    # Extra Parameters:
+    #  param - any parameter name - must be lower-case
+    #  gvar - same as for Variable Related Conditions - set to false if you wish
+    #         to use party but not gvar
+    'actor_param_<=' => proc do |actor, val, gvar, party|
+      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
+      actor.send(param) <= (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
+    end,
+    # =========================================================================
+    # Party Related
+    #  These conditions can be used to set page conditions based on values
+    # related to the party.
+    #
+    # Examples:
+    #  <Conditions: actor_in_party(1)>
+    #   This will ensure that the page will only be displayed if the actor with
+    #  ID 1 is in the party.
+    #
+    #  <Conditions: party_has_item(1)>
+    #   This will ensure that the page will only be displayed if the party has
+    #  at least one of the item with ID 1 in the inventory.
+    # =========================================================================
+    # If the party includes the actor with ID actor
+    'actor_in_party' => proc do |actor|
+      $game_party.members.include?($game_actors[actor.to_i])
+    end,
+    # If the party does not include the actor with ID actor
+    'actor_out_of_party' => proc do |actor|
+      !$game_party.members.include?($game_actors[actor.to_i])
+    end,
+    # If the party has at least one of the item with ID item
+    'party_has_item' => proc do |item|
+      $game_party.has_item?($data_items[item.to_i])
+    end,
+    # If the party has at least one of the weapon with ID weapon
+    'party_has_weapon' => proc do |weapon|
+      $game_party.has_item?($data_weapons[weapon.to_i])
+    end,
+    # If the party has at least one of the armor with ID armor
+    'party_has_armor' => proc do |armor|
+      $game_party.has_item?($data_armors[armor.to_i])
+    end,
+  }
     
-    # RegExp for an event's adjusted X or Y.
-    AdjustXY = /^<Adjusted (X|Y):\s*([\-\d]+)>/i
-    # RegExp for an event's adjusted size.
-    EventSize = /^<(\w+) Size:\s*(\d+)>/i
-    # RegExp to specify spaces as occupied by an event.
-    OccupiedSpaces = /^<Occupies:\s*(.+)>/i
-    # Hash of values used with the above tags. You can add new aliases for the
-    # values - refer to the current settings to get an idea of what does what.
-    ArrValues = { 'left' => 0, 'l' => 0, 'right' => 1, 'r' => 1,
-                  'up' => 2, 'u' => 2, 'down' => 3, 'd' => 3,
-                  'x' => 0, 'y' => 1 }
-    # RegExp for an event page's extra conditions. You can include more than
-    # one.
-    ExtraCondition = /^<Condition:\s*([\w]+)>/i
-    # RegExp to cause an event page to block the movement of other events.
-    EventBlock = /^<(EventBlock|Event Block)>/i
-    # RegExp for an event page's movement type.
-    MovementType = /^<Movement:\s*(Boat|Ship|Fly)>/i
-    # RegExp for the SE that will play when the player is close to the event
-    PlaySound = /^<Sound:\s*(\w+),\s*(\d+),\s*(\d+)>/i
-    
+  # RegExp for an event's adjusted X or Y.
+  AdjustXY = /^<Adjusted (X|Y):\s*([\-\d]+)>/i
+  # RegExp for an event's adjusted size.
+  EventSize = /^<(\w+) Size:\s*(\d+)>/i
+  # RegExp to specify spaces as occupied by an event.
+  OccupiedSpaces = /^<Occupies:\s*(.+)>/i
+  # Hash of values used with the above tags. You can add new aliases for the
+  # values - refer to the current settings to get an idea of what does what.
+  ArrValues = { 'left' => 0, 'l' => 0, 'right' => 1, 'r' => 1,
+                'up' => 2, 'u' => 2, 'down' => 3, 'd' => 3,
+                'x' => 0, 'y' => 1 }
+  # RegExp for an event page's extra conditions. You can include more than
+  # one.
+  ExtraCondition = /^<Condition:\s*((.+(\(.+\))?[,\s]*)+)>/i
+  # RegExp to cause an event page to block the movement of other events.
+  EventBlock = /^<(EventBlock|Event Block)>/i
+  # RegExp for an event page's movement type.
+  MovementType = /^<Movement:\s*(Boat|Ship|Fly)>/i
+  # RegExp for the SE that will play when the player is close to the event
+  PlaySound = /^<Sound:\s*(\w+),\s*(\d+),\s*(\d+)>/i
 end end
 
 $imported = {} if $imported.nil?
@@ -225,31 +445,34 @@ class RPG::Event::Page
     @adjusted_xy = [0,0]
     @size = [0,0,0,0]
     @occupied_spaces = []
-    comments[SES::EnhancedEvents::AdjustXY] =
+    comments[SES::Events::AdjustXY] =
       proc do |xy, pixels|
-        @adjusted_xy[SES::EnhancedEvents::ArrValues[xy.downcase]] = pixels.to_i
+        @adjusted_xy[SES::Events::ArrValues[xy.downcase]] = pixels.to_i
       end
-    comments[SES::EnhancedEvents::EventSize] =
+    comments[SES::Events::EventSize] =
       proc do |direction, size|
-        @size[SES::EnhancedEvents::ArrValues[direction.downcase]] = size.to_i
+        @size[SES::Events::ArrValues[direction.downcase]] = size.to_i
       end
-    comments[SES::EnhancedEvents::OccupiedSpaces] =
+    comments[SES::Events::OccupiedSpaces] =
       proc do |coords|
         coords.gsub!(/(?:\(([\-\d]+)[,\s*]+([\-\d]+)\))+?/) do
           @occupied_spaces << [$1.to_i, $2.to_i]; ''
         end
       end
-    comments[SES::EnhancedEvents::ExtraCondition] =
+    comments[SES::Events::ExtraCondition] =
       proc do |condition|
-        @extra_conditions.push(condition)
+        condition.split(/,\s+/).each do |condition|
+          condition[/(.+)\((.+)\)/]
+          @extra_conditions.push([$1, ($2.split(/,/) rescue [])])
+        end
       end
-    comments[SES::EnhancedEvents::EventBlock] =
+    comments[SES::Events::EventBlock] =
       proc { @event_block = true }
-    comments[SES::EnhancedEvents::MovementType] =
+    comments[SES::Events::MovementType] =
       proc do |type|
         @movement = type.downcase
       end
-    comments[SES::EnhancedEvents::PlaySound] =
+    comments[SES::Events::PlaySound] =
       proc do |se, mv, md|
         @sound = [se, mv.to_i, md.to_i]
       end
@@ -275,6 +498,7 @@ class Game_Event < Game_Character
   # @return [Array] array of x values occupied by the event
   def width(x = @x)
     width = [x]
+    return width unless @page
     @page.size[0].times { |i| width << x - (i + 1) }
     @page.size[1].times { |i| width << x + (i + 1) }
     return width
@@ -286,6 +510,7 @@ class Game_Event < Game_Character
   # @return [Array] array of y values occupied by the event
   def height(y = @y)
     height = [y]
+    return height unless @page
     @page.size[2].times { |i| height << y - (i + 1) }
     @page.size[3].times { |i| height << y + (i + 1) }
     return height
@@ -297,6 +522,7 @@ class Game_Event < Game_Character
   # @return [Array] array of spaces occupied by the event in the format [x, y]
   def occupied_spaces
     spaces = []
+    return spaces unless @page
     @page.occupied_spaces.each do |coord|
       spaces << [@x + coord[0], @y + coord[1]]
     end
@@ -317,14 +543,14 @@ class Game_Event < Game_Character
   #
   # @return [Integer] the x position at which the event should be drawn
   def screen_x
-    super + @page.adjusted_xy[0]
+    @page ? super + @page.adjusted_xy[0] : super
   end
   
   # Checks the y value at which the event should be drawn on the screen.
   #
   # @return [Integer] the y position at which the event should be drawn
   def screen_y
-    super + @page.adjusted_xy[1]
+    @page ? super + @page.adjusted_xy[1] : super
   end
   
   # Checks whether or not the event can move onto a given space based on the
@@ -416,7 +642,7 @@ class Game_Event < Game_Character
   # @return [TrueClass, FalseClass] whether or not the page should become active
   def conditions_met?(page)
     page.extra_conditions.each do |i|
-      return false unless instance_exec(&SES::EnhancedEvents::Conditions[i])
+      return false unless instance_exec(i[1], &SES::Events::Conditions[i[0]])
     end
     en_ee_ge_cm(page)
   end

@@ -1,4 +1,4 @@
-Enhanced Events v2.0 by Enelvon
+Enhanced Events v2.1 by Enelvon
 =============================================================================
 
 Summary
@@ -26,11 +26,11 @@ included at the bottom of my comments.
 Usage
 -----------------------------------------------------------------------------
   This script is controlled through tags placed in comments boxes on event
-pages as well as through the Conditions hash in the `SES::EnhancedEvents`
+pages as well as through the Conditions hash in the `SES::Events`
 module. Instructions for the hash are detailed in the module itself, while
 information about the tags is provided here.
 
-##Event Comment Tags:
+###Event Comment Tags:
 
 `<Adjusted !XY!: !Val!>`
 
@@ -40,7 +40,7 @@ drawn. You may have up to two of these per event, one for X and one for Y.
 **Replacements:**
 
 `!XY!` should be either X or Y, depending on what you want to adjust.
-
+#
 `!Val!` should be an integer value. If you're adjusting the X, negative
 values will move the image towards the left side of the screen and positive
 values will move it towards the right. If you're adjusting the Y, negative
@@ -80,12 +80,14 @@ of the event.
 `!Y!` should be the Y offset for a given space. Negative values indicate
 spaces above the event. Positive values indicate spaces below the event.
 
-`<Condition: !Cond!(, !Cond!, !Cond!,...)>`
+`<Condition: !Cond!(!Params!)[, !Cond!(!Params!), !Cond!(!Params!),...]>`
 
 Place this in a Comments box to give an event page extra conditions. You can
 include as many of these as you would like on a page, though as each tag can
 contain multiple conditions it seems unlikely that you will need more than
-one.
+one. You can pass parameters to conditions by placing parentheses around them.
+Do not put spaces between passed parameters - only commas. See the Conditions
+hash in the SES::Events module for a long list of example conditions.
 
 **Replacements:**
 
@@ -118,7 +120,7 @@ when the player is near.
 **Replacements:**
 
 `!SE!` with the name of the file in Audio/BGS (without the extension).
-
+#
 `!MV!` with the loudest the sound is allowed to be (max 100).
 
 `!MD!` with the maximum distance that the player can be and still hear the
