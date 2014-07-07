@@ -425,10 +425,11 @@ module SES module Events
   MovementType = /^<Movement:\s*(Boat|Ship|Fly)>/i
   # RegExp for the SE that will play when the player is close to the event
   PlaySound = /^<Sound:\s*(\w+),\s*(\d+),\s*(\d+)>/i
+  
+  # Register this script with the SES Core.
+  Description = Script.new('Enhanced Events', 2.1, :Enelvon)
+  Register.enter(Description)
 end end
-
-$imported = {} if $imported.nil?
-$imported["SES - EnhancedEvents"] = 2.0
 
 # Class for pages of an event in RPG Maker VX Ace.
 class RPG::Event::Page
