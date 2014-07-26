@@ -1,5 +1,5 @@
 #--
-# Enhanced Events v2.1 by Enelvon
+# Enhanced Events v2.2 by Enelvon
 # =============================================================================
 # 
 # Summary
@@ -87,8 +87,8 @@
 # include as many of these as you would like on a page, though as each tag can
 # contain multiple conditions it seems unlikely that you will need more than
 # one. You can pass parameters to conditions by placing parentheses around them.
-# Do not put spaces between passed parameters - only commas. See the Conditions
-# hash in the SES::Events module for a long list of example conditions.
+# Use commas to separate parameters. See the Condition Suite addon for a long
+# list of example conditions.
 # 
 # **Replacements:**
 # 
@@ -170,239 +170,6 @@
 module SES module Events
   Conditions = {
     # Key => proc { script to evaluate },
-    # =========================================================================
-    # Variable Related
-    #  These conditions can be used to set page conditions based on the value of
-    # entries in the $game_variables array. Almost all of them take the same
-    # three parameters, described below.
-    #
-    # Parameters:
-    #  var - the ID of a variable in $game_variables
-    #  val - the value against which the $game_variables entry is being checked
-    #  gvar - omit this if you wish val to be a solid value, but if you want val
-    #         to be another variable ID you can put true in this slot
-    #
-    # Examples:
-    #  <Conditions: var_!=(1,5)>
-    #   This will ensure that the page will only be displayed if the variable
-    #  with ID 1 is not equal to 5.
-    #
-    #  <Conditions: var_==(1,2,true)>
-    #   This will ensure that the page will only be displayed if the variable
-    #  with ID 1 is equal to the variable with ID 2.
-    # =========================================================================
-    # If $game_variables[var] does not equal val
-    'var_!=' => proc do |var, val, gvar|
-      val = (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
-      $game_variables[var.to_i] != val
-    end,
-    # If $game_variables[var] equals val
-    'var_==' => proc do |var, val, gvar|
-      val = (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
-      $game_variables[var.to_i] == val
-    end,
-    # If $game_variables[var] is less than val
-    'var_<' => proc do |var, val, gvar|
-      val = (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
-      $game_variables[var.to_i] < val
-    end,
-    # If $game_variables[var] is less than or equal to val
-    'var_<=' => proc do |var, val, gvar|
-      val = (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
-      $game_variables[var.to_i] <= val
-    end,
-    # If $game_variables[var] is greater than val
-    'var_>' => proc do |var, val, gvar|
-      val = (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
-      $game_variables[var.to_i] > val
-    end,
-    # If $game_variables[var] is greater than or equal to val
-    'var_>=' => proc do |var, val, gvar|
-      val = (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
-      $game_variables[var.to_i] >= val
-    end,
-    # If $game_variables[var] is present in the range val1..val2
-    # Extra Parameters:
-    #  val1 - the lower end of the range being checked
-    #  val2 - the upper end of the range being checked
-    #  gvar1 - same as gvar for other variable conditions, but affects only val1
-    #  gvar2 - same as gvar for other variable conditions, but affects only val2
-    'var_between' => proc do |var, val1, val2, gvar1, gvar2|
-      lower_bound = (gvar1['true'] ? $game_variables[val1.to_i] : val1.to_i)
-      upper_bound = (gvar2['true'] ? $game_variables[val2.to_i] : val2.to_i)
-      (lower_bound..upper_bound).include?($game_variables[var])
-    end,
-    # If $game_variables[var] is not present in the range val1..val2
-    # Extra Parameters:
-    #  val1 - the lower end of the range being checked
-    #  val2 - the upper end of the range being checked
-    #  gvar1 - same as gvar for other variable conditions, but affects only val1
-    #  gvar2 - same as gvar for other variable conditions, but affects only val2
-    'var_not_between' => proc do |var, val1, val2, gvar1, gvar2|
-      lower_bound = (gvar1['true'] ? $game_variables[val1.to_i] : val1.to_i)
-      upper_bound = (gvar2['true'] ? $game_variables[val2.to_i] : val2.to_i)
-      !(lower_bound..upper_bound).include?($game_variables[var])
-    end,
-    # =========================================================================
-    # Switch Related
-    #  These conditions can be used to set page conditions based on the value of
-    # entries in the $game_switches array. All of them take the same parameters,
-    # described below.
-    #
-    # Parameters:
-    #  switch - the ID of a switch in $game_switches
-    #  value - either true or false, depending on whether the switch should be
-    #          on or off
-    #
-    # Examples:
-    #  <Conditions: switch(1,true)>
-    #   This will ensure that the page will only be displayed if the switch with
-    #  ID 1 is on.
-    #
-    #  <Conditions: switch(1,false)>
-    #   This will ensure that the page will only be displayed if the switch with
-    #  ID 1 is off.
-    # =========================================================================
-    # If $game_switches[switch] is equal to value
-    'switch' => proc do |switch, value|
-      $game_switches[switch.to_i] == (value == 'true' ? true : false)
-    end,
-    # =========================================================================
-    # Actor Related
-    #  These conditions can be used to set page conditions based on values
-    # related to actors. All of them have the same basic parameter, described
-    # below. They also share the same final parameter, also described below.
-    #
-    # Parameters:
-    #  actor - the ID of an actor in $game_actors
-    #  party - omit this if you are specifying an actor by ID, but put true in
-    #          this slot if you wish for actor to point to a slot in the party
-    #          (party indicies begin at 0)
-    #
-    # Examples:
-    #  <Conditions: actor_using_weapon(1,5)>
-    #   This will ensure that the page will only be displayed if the actor with
-    #  ID 1 is using the weapon with ID 5.
-    #
-    #  <Conditions: actor_param_>=(0,atk,100,false,true)>
-    #   This will ensure that the page will only be displayed if the actor in
-    #  the party's first slot has an atk stat that is greater than or equal to
-    #  100.
-    # =========================================================================
-    # If the actor with ID actor is equipped with the weapon with ID wid
-    'actor_using_weapon' => proc do |actor, wid, party|
-      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
-      actor.weapons.include?($data_weapons[wid.to_i])
-    end,
-    # If the actor with ID actor is equipped with the armor with ID aid
-    'actor_using_armor' => proc do |actor, aid, party|
-      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
-      actor.weapons.include?($data_armors[aid.to_i])
-    end,
-    # If the actor with ID actor has a level greater than lvl
-    # Extra Parameters:
-    #  gvar - same as for Variable Related Conditions - set to false if you wish
-    #         to use party but not gvar
-    'actor_level_>' => proc do |actor, lvl, gvar, party|
-      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
-      actor.level > (gvar['true'] ? $game_variables[lvl.to_i] : lvl.to_i)
-    end,
-    # If the actor with ID actor has a level greater than or equal to lvl
-    # Extra Parameters:
-    #  gvar - same as for Variable Related Conditions - set to false if you wish
-    #         to use party but not gvar
-    'actor_level_>=' => proc do |actor, lvl, gvar, party|
-      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
-      actor.level >= (gvar['true'] ? $game_variables[lvl.to_i] : lvl.to_i)
-    end,
-    # If the actor with ID actor has a level less than lvl
-    # Extra Parameters:
-    #  gvar - same as for Variable Related Conditions - set to false if you wish
-    #         to use party but not gvar
-    'actor_level_<' => proc do |actor, lvl, gvar, party|
-      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
-      actor.level < (gvar['true'] ? $game_variables[lvl.to_i] : lvl.to_i)
-    end,
-    # If the actor with ID actor has a level less than or equal to lvl
-    # Extra Parameters:
-    #  gvar - same as for Variable Related Conditions - set to false if you wish
-    #         to use party but not gvar
-    'actor_level_<=' => proc do |actor, lvl, gvar, party|
-      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
-      actor.level <= (gvar['true'] ? $game_variables[lvl.to_i] : lvl.to_i)
-    end,
-    # If the actor with ID actor has param param at a value greater than val
-    # Extra Parameters:
-    #  param - any parameter name - must be lower-case
-    #  gvar - same as for Variable Related Conditions - set to false if you wish
-    #         to use party but not gvar
-    'actor_param_>' => proc do |actor, param, val, gvar, party|
-      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
-      actor.send(param) > (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
-    end,
-    # If the actor with ID actor has param param at a value greater than or
-    #  equal to val
-    # Extra Parameters:
-    #  param - any parameter name - must be lower-case
-    #  gvar - same as for Variable Related Conditions - set to false if you wish
-    #         to use party but not gvar
-    'actor_param_>=' => proc do |actor, param, val, gvar, party|
-      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
-      actor.send(param) >= (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
-    end,
-    # If the actor with ID actor has param param at a value less than val
-    # Extra Parameters:
-    #  param - any parameter name - must be lower-case
-    #  gvar - same as for Variable Related Conditions - set to false if you wish
-    #         to use party but not gvar
-    'actor_param_<' => proc do |actor, param, val, gvar, party|
-      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
-      actor.send(param) < (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
-    end,
-    # If the actor with ID actor has param param at a value less than or equal
-    #  to val
-    # Extra Parameters:
-    #  param - any parameter name - must be lower-case
-    #  gvar - same as for Variable Related Conditions - set to false if you wish
-    #         to use party but not gvar
-    'actor_param_<=' => proc do |actor, val, gvar, party|
-      actor = party['true'] ? $game_party.members[actor.to_i] : actor.to_i
-      actor.send(param) <= (gvar['true'] ? $game_variables[val.to_i] : val.to_i)
-    end,
-    # =========================================================================
-    # Party Related
-    #  These conditions can be used to set page conditions based on values
-    # related to the party.
-    #
-    # Examples:
-    #  <Conditions: actor_in_party(1)>
-    #   This will ensure that the page will only be displayed if the actor with
-    #  ID 1 is in the party.
-    #
-    #  <Conditions: party_has_item(1)>
-    #   This will ensure that the page will only be displayed if the party has
-    #  at least one of the item with ID 1 in the inventory.
-    # =========================================================================
-    # If the party includes the actor with ID actor
-    'actor_in_party' => proc do |actor|
-      $game_party.members.include?($game_actors[actor.to_i])
-    end,
-    # If the party does not include the actor with ID actor
-    'actor_out_of_party' => proc do |actor|
-      !$game_party.members.include?($game_actors[actor.to_i])
-    end,
-    # If the party has at least one of the item with ID item
-    'party_has_item' => proc do |item|
-      $game_party.has_item?($data_items[item.to_i])
-    end,
-    # If the party has at least one of the weapon with ID weapon
-    'party_has_weapon' => proc do |weapon|
-      $game_party.has_item?($data_weapons[weapon.to_i])
-    end,
-    # If the party has at least one of the armor with ID armor
-    'party_has_armor' => proc do |armor|
-      $game_party.has_item?($data_armors[armor.to_i])
-    end,
   }
     
   # RegExp for an event's adjusted X or Y.
@@ -418,7 +185,7 @@ module SES module Events
                 'x' => 0, 'y' => 1 }
   # RegExp for an event page's extra conditions. You can include more than
   # one.
-  ExtraCondition = /^<Condition:\s*((.+(\(.+\))?[,\s]*)+)>/i
+  ExtraCondition = /^<Conditions?:\s*((.+(\(.+\))?[,\s]*)+)>/i
   # RegExp to cause an event page to block the movement of other events.
   EventBlock = /^<(EventBlock|Event Block)>/i
   # RegExp for an event page's movement type.
@@ -426,8 +193,24 @@ module SES module Events
   # RegExp for the SE that will play when the player is close to the event
   PlaySound = /^<Sound:\s*(\w+),\s*(\d+),\s*(\d+)>/i
   
+  def self.step_through(string, delimiter = ['(', ')'])
+    levels, line = { 0 => { data: '', closed: false } }, ''
+    string.each_char do |c|
+      line << c
+      levels.each_value { |d| d[:data] << c unless d[:closed] }
+      if (data = line[delimiter[0], 1])
+        levels[levels.keys.size] = { data: data, closed: false }
+        line.clear
+      elsif line[delimiter[1]]
+        levels.values.reverse.find { |l| !l[:closed] }[:closed] = true
+        line.clear
+      end
+    end
+    return levels
+  end
+  
   # Register this script with the SES Core.
-  Description = Script.new('Enhanced Events', 2.1, :Enelvon)
+  Description = Script.new('Enhanced Events', 2.2, :Enelvon)
   Register.enter(Description)
 end end
 
@@ -462,9 +245,10 @@ class RPG::Event::Page
       end
     comments[SES::Events::ExtraCondition] =
       proc do |condition|
-        condition.split(/,\s+/).each do |condition|
-          condition[/(.+)\((.+)\)/]
-          @extra_conditions.push([$1, ($2.split(/,/) rescue [])])
+        SES::Events.step_through(condition, [/(\S+\()/, ')']).each_pair do |g,v|
+          next if g == 0
+          v[:data][/(\S+?)\((.+)\)/]
+          @extra_conditions.push([$1, $2.split(/,\s*/)])
         end
       end
     comments[SES::Events::EventBlock] =

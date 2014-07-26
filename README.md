@@ -1,4 +1,4 @@
-Enhanced Events v2.1 by Enelvon
+Enhanced Events v2.2 by Enelvon
 =============================================================================
 
 Summary
@@ -40,7 +40,7 @@ drawn. You may have up to two of these per event, one for X and one for Y.
 **Replacements:**
 
 `!XY!` should be either X or Y, depending on what you want to adjust.
-#
+
 `!Val!` should be an integer value. If you're adjusting the X, negative
 values will move the image towards the left side of the screen and positive
 values will move it towards the right. If you're adjusting the Y, negative
@@ -86,8 +86,8 @@ Place this in a Comments box to give an event page extra conditions. You can
 include as many of these as you would like on a page, though as each tag can
 contain multiple conditions it seems unlikely that you will need more than
 one. You can pass parameters to conditions by placing parentheses around them.
-Do not put spaces between passed parameters - only commas. See the Conditions
-hash in the SES::Events module for a long list of example conditions.
+Use commas to separate parameters. See the Condition Suite addon for a long
+list of example conditions.
 
 **Replacements:**
 
@@ -120,7 +120,7 @@ when the player is near.
 **Replacements:**
 
 `!SE!` with the name of the file in Audio/BGS (without the extension).
-#
+
 `!MV!` with the loudest the sound is allowed to be (max 100).
 
 `!MD!` with the maximum distance that the player can be and still hear the
