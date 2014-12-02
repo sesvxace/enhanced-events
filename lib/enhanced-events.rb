@@ -220,7 +220,7 @@ class RPG::Event::Page
   alias_method :en_ee_sc, :scan_ses_comments
   # Scans Comments boxes present on an event page.
   #
-  # @param tags [Hash] hash of tags that should be parsed
+  # @param comments [Hash] hash of comment tags that should be parsed
   def scan_ses_comments(comments = {})
     @extra_conditions = []
     @event_block = false
